@@ -1,9 +1,9 @@
-import { Stack, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import { PaperProvider } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
-import { getStoredAuth } from "../utils/auth";
+import { getStoredAuth } from "../../utils/auth";
 import React from "react";
 
 export default function Layout() {
@@ -30,9 +30,35 @@ export default function Layout() {
       <Tabs
         screenOptions={{
           headerShown: true,
-          // tabBarStyle: { display: segments[0] === "(auth)" ? "none" : "flex" },
+          tabBarStyle: { display: segments[0] === "(auth)" ? "none" : "flex" },
         }}
       >
+        <Tabs.Screen
+          name="order-details"
+          options={{
+            href: null,
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="diamond"
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="orders"
+          options={{
+            title: "Orders",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="clipboard-list"
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="settings"
           options={{
@@ -43,14 +69,6 @@ export default function Layout() {
           }}
         />
       </Tabs>
-    </PaperProvider>
-  );
-
-  return (
-    <PaperProvider>
-      <Stack screenOptions={{ headerShown: true }}>
-        <Stack.Screen name="(tabs)" />
-      </Stack>
     </PaperProvider>
   );
 }

@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
-import { router } from 'expo-router';
-import { loginUser } from './utils/auth';
-import React from 'react';
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { TextInput, Button, Text } from "react-native-paper";
+import { router } from "expo-router";
+import { loginUser } from "../utils/auth";
+import React from "react";
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       // console.log(password);
       await loginUser({ username, password });
-      router.replace('/orders');
+      router.replace("(tabs)"); //"/orders"
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
+      setError("Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -30,7 +30,7 @@ export default function Login() {
       <Text variant="headlineMedium" style={styles.title}>
         WooCommerce Orders
       </Text>
-      
+
       <TextInput
         label="Username"
         value={username}
@@ -66,10 +66,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 30,
   },
   input: {
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   error: {
-    color: 'red',
+    color: "red",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
