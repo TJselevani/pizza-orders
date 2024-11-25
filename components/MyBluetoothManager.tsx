@@ -70,7 +70,7 @@ const BluetoothManager = () => {
     try {
       const devices = await BluetoothClassic.getBondedDevices();
       setPairedDevices(devices);
-      console.log("Paired devices:", devices);
+      console.log("Paired devices:", devices.length);
     } catch (error) {
       console.error(`Error fetching paired devices: ${error}`);
     }
@@ -80,13 +80,22 @@ const BluetoothManager = () => {
     try {
       setIsSearching(true);
       console.log("Starting discovery for available devices...");
+
+      // Start a timer to cancel discovery after 30 seconds
+      const timeout = setTimeout(async () => {
+        console.log("Cancelling device discovery after timeout...");
+        await BluetoothClassic.cancelDiscovery();
+        setIsSearching(false);
+      }, 30000); // 30 seconds
+
       const devices = await BluetoothClassic.startDiscovery();
+      clearTimeout(timeout); // Clear the timeout if discovery completes early
       setAvailableDevices(devices);
       console.log("Available devices:", devices);
     } catch (error) {
       console.error(`Error scanning for devices: ${error}`);
     } finally {
-      // Optionally stop discovery after some time
+      // Ensure discovery is canceled if it hasn't already been
       await BluetoothClassic.cancelDiscovery();
       setIsSearching(false);
     }

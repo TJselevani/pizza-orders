@@ -1,17 +1,38 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { Text, Card, Divider, ActivityIndicator, FAB, Button } from 'react-native-paper';
-import { useLocalSearchParams, router } from 'expo-router';
-import { format } from 'date-fns';
-import { Order } from '../../utils/types';
-import { fetchOrders } from '../../utils/api';
-import React from 'react';
+import { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import {
+  Text,
+  Card,
+  Divider,
+  ActivityIndicator,
+  FAB,
+  Button,
+  Icon,
+} from "react-native-paper";
+import { useLocalSearchParams, router } from "expo-router";
+import { format } from "date-fns";
+import { Order } from "../../constants/types";
+import { fetchOrders } from "../../utils/api";
+import MyThermalPrinter from "../../components/MyThermalPrinter";
+import React from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import AccordionComponent from "../../components/MyAccordion";
+import Receipt from "../../components/Receipt";
+import generateReceiptString from "../../components/ReceiptString";
 
 export default function OrderDetails() {
   const { orderId } = useLocalSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [printing, setPrinting] = useState(false);
+  const isPrinterConnected = MyThermalPrinter.isPrinterConnected();
 
   useEffect(() => {
     loadOrder();
@@ -20,54 +41,45 @@ export default function OrderDetails() {
   const loadOrder = async () => {
     try {
       const { orders } = await fetchOrders();
-      const foundOrder = orders.find(o => o.id.toString() === orderId);
+      const foundOrder = orders.find((o) => o.id.toString() === orderId);
       if (foundOrder) {
         setOrder(foundOrder);
       } else {
-        setError('Order not found');
+        setError("Order not found");
       }
     } catch (err) {
-      setError('Failed to load order details');
+      setError("Failed to load order details");
     } finally {
       setLoading(false);
     }
   };
 
-  // const printOrder = async () => {
-  //   if (!order) return;
+  const printOrder = async (order) => {
+    if (!order) return;
 
-  //   try {
-  //     setPrinting(true);
-  //     await BluetoothEscposPrinter.printerInit();
-  //     await BluetoothEscposPrinter.printText("ORDER #" + order.id + "\n\n");
-  //     await BluetoothEscposPrinter.printText("Customer: " + order.billing.first_name + " " + order.billing.last_name + "\n");
-  //     await BluetoothEscposPrinter.printText("Date: " + format(new Date(order.date_created), 'PPpp') + "\n\n");
-      
-  //     await BluetoothEscposPrinter.printText("Items:\n");
-  //     for (const item of order.line_items) {
-  //       await BluetoothEscposPrinter.printText(
-  //         item.name + "\n" +
-  //         "Qty: " + item.quantity + " x £" + item.price + "\n" +
-  //         "Subtotal: £" + item.total + "\n\n"
-  //       );
-  //     }
-      
-  //     await BluetoothEscposPrinter.printText("Total: £" + order.total + "\n\n");
-  //     await BluetoothEscposPrinter.printText("--------------------------------\n");
-  //   } catch (error) {
-  //     console.error('Printing failed:', error);
-  //   } finally {
-  //     setPrinting(false);
-  //   }
-  // };
+    try {
+      setPrinting(true);
+      const receiptString = generateReceiptString(order);
+      console.log(receiptString);
+
+      await MyThermalPrinter.printText(receiptString);
+
+      Alert.alert("Success", "Order receipt printed successfully.");
+    } catch (error) {
+      console.error("Printing failed:", error);
+      Alert.alert("Error", "Failed to print the receipt.");
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   const markAsCompleted = async () => {
     try {
       setLoading(true);
-      await updateOrderStatus(orderId, 'completed');
-      router.replace('/orders');
+      // await updateOrderStatus(orderId, "completed");
+      router.replace("/orders");
     } catch (error) {
-      setError('Failed to update order status');
+      setError("Failed to update order status");
     } finally {
       setLoading(false);
     }
@@ -100,9 +112,7 @@ export default function OrderDetails() {
             </Text>
             <Text variant="bodyMedium">{order.billing.email}</Text>
             <Text variant="bodyMedium">{order.billing.phone}</Text>
-            <Text variant="bodyMedium">
-              {order.billing.address_1}
-            </Text>
+            <Text variant="bodyMedium">{order.billing.address_1}</Text>
             <Text variant="bodyMedium">
               {order.billing.city}, {order.billing.postcode}
             </Text>
@@ -114,7 +124,7 @@ export default function OrderDetails() {
           <Card.Title title="Order Details" />
           <Card.Content>
             <Text variant="bodyMedium">
-              Date: {format(new Date(order.date_created), 'PPpp')}
+              Date: {format(new Date(order.date_created), "PPpp")}
             </Text>
             <Text variant="titleLarge" style={styles.total}>
               Total: £{order.total}
@@ -131,13 +141,35 @@ export default function OrderDetails() {
                 <Text variant="bodyMedium">
                   Quantity: {item.quantity} × £{item.price}
                 </Text>
-                <Text variant="bodyMedium">
-                  Subtotal: £{item.total}
-                </Text>
+                <Text variant="bodyMedium">Subtotal: £{item.total}</Text>
               </View>
             ))}
           </Card.Content>
         </Card>
+
+        {/* Print Button */}
+        <View style={{ alignItems: "center", marginVertical: 20 }}>
+          <TouchableOpacity
+            onLongPress={() => router.push("/printer")} // Always navigate on long press
+            onPress={() => printOrder(order)} // Normal print action
+            disabled={!isPrinterConnected} // Disabled state for print button
+          >
+            <Ionicons
+              name="print-outline"
+              size={28}
+              color={isPrinterConnected ? "green" : "gray"}
+            />
+          </TouchableOpacity>
+          <Text style={{ color: isPrinterConnected ? "green" : "gray" }}>
+            {isPrinterConnected ? "Print Receipt" : "Printer not connected"}
+          </Text>
+        </View>
+
+        <View style={{ marginHorizontal: 20 }}>
+          <AccordionComponent title="Order Receipt">
+            <Receipt order={order} />
+          </AccordionComponent>
+        </View>
       </ScrollView>
 
       <View style={styles.actions}>
@@ -167,8 +199,8 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   card: {
     margin: 16,
@@ -178,7 +210,7 @@ const styles = StyleSheet.create({
   },
   total: {
     marginTop: 8,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   itemsTitle: {
     marginBottom: 8,
@@ -187,23 +219,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     margin: 16,
     right: 0,
-    bottom: 0,
+    top: 0,
   },
   actions: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: 'white',
+    borderTopColor: "#eee",
+    backgroundColor: "white",
   },
   completeButton: {
     marginBottom: 16,
   },
 });
-
-function updateOrderStatus(orderId: string | string[], arg1: string) {
-  // throw new Error('Function not implemented.');
-  console.log('Function not implemented.')
-}

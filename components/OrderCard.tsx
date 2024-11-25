@@ -1,7 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { Text, Card, Chip } from "react-native-paper";
 import { format } from "date-fns";
-import { Order } from "../utils/types";
+import { Order } from "../constants/types";
 import React from "react";
 
 interface OrderCardProps {

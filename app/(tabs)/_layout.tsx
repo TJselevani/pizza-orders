@@ -20,9 +20,11 @@ export default function Layout() {
 
     if (!auth && !isAuthGroup) {
       router.replace("/");
-    } else if (auth && isAuthGroup) {
-      router.replace("/orders");
     }
+
+    // else if (auth && isAuthGroup) {
+    //   router.replace("/orders");
+    // }
   };
 
   return (
@@ -33,19 +35,6 @@ export default function Layout() {
           tabBarStyle: { display: segments[0] === "(auth)" ? "none" : "flex" },
         }}
       >
-        <Tabs.Screen
-          name="order-details"
-          options={{
-            href: null,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons
-                name="diamond"
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
         <Tabs.Screen
           name="orders"
           options={{

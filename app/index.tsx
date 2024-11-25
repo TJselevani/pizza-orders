@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { loginUser } from "../utils/auth";
 import React from "react";
 
@@ -17,7 +17,8 @@ export default function Login() {
       setError("");
       // console.log(password);
       await loginUser({ username, password });
-      router.replace("(tabs)"); //"/orders"
+      // <Redirect href={"/(tabs)"} />;
+      router.replace("/orders");
     } catch (err) {
       setError("Login failed. Please check your credentials.");
     } finally {

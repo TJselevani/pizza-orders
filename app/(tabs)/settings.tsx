@@ -4,9 +4,13 @@ import { Text, List, Switch } from "react-native-paper";
 import { router } from "expo-router";
 import { clearAuth, getStoredAuth } from "../../utils/auth";
 import React from "react";
+import BluetoothManager from "../../components/MyBluetoothManager";
+import MyPrinter from "../../components/MyThermalPrinter";
 
 export default function Settings() {
   const [userEmail, setUserEmail] = useState("");
+  const { isBluetoothEnabled } = BluetoothManager();
+  const isPrinterConnected = MyPrinter.isPrinterConnected();
 
   useEffect(() => {
     loadUserData();
@@ -31,16 +35,33 @@ export default function Settings() {
         <List.Item
           title="Email"
           description={userEmail}
-          left={(props) => <List.Icon {...props} icon="email" />}
+          left={(props) => <List.Icon {...props} icon="email" color="gray" />}
         />
         <List.Item
           title="Bluetooth"
-          left={(props) => <List.Icon {...props} icon="bluetooth" />}
+          left={(props) => (
+            <List.Icon
+              {...props}
+              icon="bluetooth"
+              color={isBluetoothEnabled ? "green" : "gray"}
+            />
+          )}
           onPress={() => router.push("/bluetooth")}
         />
         <List.Item
+          title="Printer"
+          left={(props) => (
+            <List.Icon
+              {...props}
+              icon="printer"
+              color={isPrinterConnected ? "green" : "gray"}
+            />
+          )}
+          onPress={() => router.push("/printer")}
+        />
+        <List.Item
           title="Logout"
-          left={(props) => <List.Icon {...props} icon="logout" />}
+          left={(props) => <List.Icon {...props} icon="logout" color="gray" />}
           onPress={handleLogout}
         />
       </List.Section>

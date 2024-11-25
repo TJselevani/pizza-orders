@@ -23,6 +23,7 @@ const BluetoothSettings = () => {
     connectToDevice,
     disconnectDevice,
     isSearching,
+    isConnected,
   } = BluetoothManager();
 
   return (
@@ -61,7 +62,11 @@ const BluetoothSettings = () => {
                   style={styles.actionButton}
                   onPress={disconnectDevice}
                 >
-                  <Icon name="settings-outline" size={20} color="#fff" />
+                  <Icon
+                    name="exit"
+                    size={20}
+                    color={isConnected() ? "green" : "gray"}
+                  />
                 </TouchableOpacity>
               </View>
             )}
@@ -180,7 +185,7 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   actionButton: {
-    backgroundColor: "#007BFF",
+    // backgroundColor: "#007BFF",
     borderRadius: 20,
     padding: 8,
     justifyContent: "center",

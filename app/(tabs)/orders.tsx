@@ -9,7 +9,7 @@ import {
 } from "react-native-paper";
 import { router } from "expo-router";
 import { fetchOrders } from "../../utils/api";
-import { Order } from "../../utils/types";
+import { Order } from "../../constants/types";
 import { getStoredAuth } from "../../utils/auth";
 import React from "react";
 import OrderCard from "../../components/OrderCard";
@@ -91,7 +91,7 @@ export default function Orders() {
               order={order}
               onPress={() =>
                 router.push({
-                  pathname: "/order-details",
+                  pathname: "/details/order-details",
                   params: { orderId: order.id },
                 })
               }

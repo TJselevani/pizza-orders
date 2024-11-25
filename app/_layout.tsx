@@ -5,6 +5,11 @@ import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { getStoredAuth } from "../utils/auth";
 import React from "react";
+import { LogBox } from "react-native";
+
+LogBox.ignoreLogs([
+  "`new NativeEventEmitter()` was called with a non-null argument",
+]);
 
 export default function Layout() {
   const router = useRouter();
@@ -24,27 +29,6 @@ export default function Layout() {
       router.replace("/orders");
     }
   };
-
-  return (
-    <PaperProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: true,
-          // tabBarStyle: { display: segments[0] === "(auth)" ? "none" : "flex" },
-        }}
-      >
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: "Settings",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons name="cog" size={size} color={color} />
-            ),
-          }}
-        />
-      </Tabs>
-    </PaperProvider>
-  );
 
   return (
     <PaperProvider>
