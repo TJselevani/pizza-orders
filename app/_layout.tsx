@@ -6,6 +6,10 @@ import { useRouter, useSegments } from "expo-router";
 import { getStoredAuth } from "../utils/auth";
 import React from "react";
 import { LogBox } from "react-native";
+import {
+  requestBluetoothPermissions,
+  requestPermissions,
+} from "../utils/permissions";
 
 LogBox.ignoreLogs([
   "`new NativeEventEmitter()` was called with a non-null argument",
@@ -16,6 +20,8 @@ export default function Layout() {
   const segments = useSegments();
 
   useEffect(() => {
+    requestPermissions();
+    requestBluetoothPermissions();
     checkAuth();
   }, [segments]);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
-import MyPrinter from "../../components/MyThermalPrinter"; // Ensure the path is correct for the ThermalPrinter class
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { IBLEPrinter } from "react-native-thermal-receipt-printer";
+import BluetoothManager from "../../components/MyBluetoothManager";
+import thermalPrinter from "../../components/MyThermalPrinter";
 
 const PrinterSettingsScreen: React.FC = () => {
-  const [printers, setPrinters] = useState<IBLEPrinter[] | any[]>([]);
+  const { isBluetoothEnabled } = BluetoothManager();
+  const [printers, setPrinters] = useState<IBLEPrinter[]>([]);
   const [selectedPrinter, setSelectedPrinter] = useState<string | null>(null);
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,22 +24,27 @@ const PrinterSettingsScreen: React.FC = () => {
     const fetchPrinters = async () => {
       try {
         setIsLoading(true);
-        await MyPrinter.initializePrinter();
-        const deviceList = await MyPrinter.getDeviceList();
+        await thermalPrinter.initializePrinter();
+        const deviceList = await thermalPrinter.getDeviceList();
         setPrinters(deviceList);
       } catch (error) {
-        console.error("Error fetching printers:", error);
-        Alert.alert("Error", "Failed to fetch Bluetooth devices.");
+        handleError("Failed to fetch Bluetooth devices.");
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchPrinters();
   }, []);
 
-  const connectToPrinter = async (address: string) => {
+  const handleError = (message: string) => {
+    console.error(message);
+    Alert.alert("Error", message);
+  };
+
+  const connectToPrinter = useCallback(async (address: string) => {
     try {
-      await MyPrinter.connectToPrinter(address);
+      await thermalPrinter.connectToPrinter(address);
       setSelectedPrinter(address);
       setIsPrinterConnected(true);
       Alert.alert(
@@ -44,70 +52,104 @@ const PrinterSettingsScreen: React.FC = () => {
         `Successfully connected to printer at ${address}`
       );
     } catch (error) {
-      console.error("Connection error:", error);
+      handleError("Failed to connect to printer.");
       setIsPrinterConnected(false);
-      Alert.alert("Connection Error", "Failed to connect to printer.");
     }
-  };
+  }, []);
 
-  const disconnectPrinter = async () => {
+  const disconnectPrinter = useCallback(async () => {
     try {
-      await MyPrinter.disconnectPrinter();
+      await thermalPrinter.disconnectPrinter();
       setSelectedPrinter(null);
       setIsPrinterConnected(false);
       Alert.alert("Disconnected", "Printer has been disconnected.");
     } catch (error) {
-      console.error("Disconnection error:", error);
-      Alert.alert("Disconnection Error", "Failed to disconnect the printer.");
+      handleError("Failed to disconnect the printer.");
     }
-  };
+  }, []);
 
-  const printTestMessage = async () => {
+  const printTestMessage = useCallback(async () => {
     if (!isPrinterConnected) {
       Alert.alert("No Printer Connected", "Please connect to a printer first.");
       return;
     }
     try {
-      await MyPrinter.printText("Test Print Message\n\n");
+      await thermalPrinter.printText("Test Print Message\n\n");
       Alert.alert("Success", "Test message sent to printer.");
     } catch (error) {
-      console.error("Printing error:", error);
-      Alert.alert("Print Error", "Failed to print the test message.");
+      handleError("Failed to print the test message.");
+    }
+  }, [isPrinterConnected]);
+
+  const refreshDevices = async () => {
+    if (!isBluetoothEnabled) {
+      Alert.alert(
+        "Bluetooth Disabled",
+        "Please enable Bluetooth to scan for devices."
+      );
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const deviceList = await thermalPrinter.getDeviceList();
+      setPrinters(deviceList);
+      Alert.alert(
+        "Devices Refreshed",
+        "Successfully refreshed the list of devices."
+      );
+    } catch (error) {
+      handleError("Failed to refresh devices.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Available Printers</Text>
+
       {isLoading ? (
-        <Text>Loading Printers...</Text>
+        <ActivityIndicator size="large" color="#3b82f6" />
       ) : (
-        <FlatList
-          data={printers}
-          keyExtractor={(item: IBLEPrinter) => item.inner_mac_address}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.printerItem}
-              onPress={() => connectToPrinter(item.inner_mac_address)}
-            >
-              <View>
-                <Text style={styles.deviceName}>
-                  {item.device_name || "Unknown Device"}
-                </Text>
-                <Text style={styles.macAddress}>{item.inner_mac_address}</Text>
+        <>
+          <FlatList
+            data={printers}
+            keyExtractor={(item: IBLEPrinter) => item.inner_mac_address}
+            renderItem={({ item }) => {
+              const { device_name, inner_mac_address } = item;
+              return (
+                <TouchableOpacity
+                  style={styles.printerItem}
+                  onPress={() => connectToPrinter(inner_mac_address)}
+                >
+                  <View>
+                    <Text style={styles.deviceName}>
+                      {device_name || "Unknown Device"}
+                    </Text>
+                    <Text style={styles.macAddress}>{inner_mac_address}</Text>
+                  </View>
+                  {selectedPrinter === inner_mac_address && (
+                    <Ionicons name="checkmark-circle" size={24} color="green" />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyListContainer}>
+                <Text style={styles.emptyListText}>No printers found</Text>
               </View>
-              {selectedPrinter === item.inner_mac_address && (
-                <Ionicons name="checkmark-circle" size={24} color="green" />
-              )}
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyListContainer}>
-              <Text style={styles.emptyListText}>No printers found</Text>
-            </View>
-          }
-        />
+            }
+          />
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={refreshDevices}
+          >
+            <Text style={styles.buttonText}>Refresh Devices</Text>
+          </TouchableOpacity>
+        </>
       )}
+
       {selectedPrinter && (
         <View style={styles.actions}>
           <TouchableOpacity
@@ -122,6 +164,14 @@ const PrinterSettingsScreen: React.FC = () => {
           >
             <Text style={styles.buttonText}>Disconnect Printer</Text>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {!isBluetoothEnabled && (
+        <View style={styles.bluetoothWarning}>
+          <Text style={styles.warningText}>
+            Bluetooth is turned off. Please enable it to scan for devices.
+          </Text>
         </View>
       )}
     </View>
@@ -161,6 +211,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: { textAlign: "center", color: "#ffffff", fontWeight: "600" },
+
+  // New styles for refresh button and bluetooth warning
+  refreshButton: {
+    backgroundColor: "#34D399",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  bluetoothWarning: {
+    backgroundColor: "#FFCCCB",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  warningText: {
+    color: "#D8000C",
+    fontWeight: "600",
+  },
 });
 
 export default PrinterSettingsScreen;

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Order } from "./types";
+import { Order } from "../constants/types";
 import { getStoredAuth } from "./auth";
 
 interface FetchOrdersParams {
@@ -65,4 +65,24 @@ export const fetchOrders = async ({
     console.error("API Error:", error);
     throw new Error("Failed to fetch orders");
   }
+};
+
+export const updateOrderStatus = async (
+  orderId: number,
+  data: Partial<Order>
+) => {
+  console.log("implement endpoint logic to update isPrinted status");
+  // const response = await fetch(`/api/orders/${orderId}`, {
+  //   method: "PATCH",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify(data),
+  // });
+
+  // if (!response.ok) {
+  //   throw new Error("Failed to update order status");
+  // }
+
+  // return response.json();
 };

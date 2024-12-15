@@ -1,3 +1,4 @@
 {
-  "cSpell.words": ["Escpos", "IBLE", "IUSB"]
+  "cSpell.words": ["Escpos", "IBLE", "IUSB"],
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

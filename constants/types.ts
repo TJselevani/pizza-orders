@@ -33,6 +33,7 @@ export interface Order {
     country: string;
   };
   line_items: OrderItem[];
+  isPrinted?: boolean | undefined;
 }
 
 export interface Printer {

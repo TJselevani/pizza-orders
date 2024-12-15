@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { StyleSheet, View, FlatList } from "react-native";
 import {
   Text,
@@ -8,11 +8,13 @@ import {
   SegmentedButtons,
 } from "react-native-paper";
 import { router } from "expo-router";
-import { fetchOrders } from "../../utils/api";
+import { fetchOrders, updateOrderStatus } from "../../utils/api";
 import { Order } from "../../constants/types";
 import { getStoredAuth } from "../../utils/auth";
 import React from "react";
 import OrderCard from "../../components/OrderCard";
+import generateReceiptString from "../../components/ReceiptString";
+import thermalPrinter from "../../components/MyThermalPrinter";
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -22,7 +24,10 @@ export default function Orders() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [printing, setPrinting] = useState(false);
+  const isPrinterConnected = thermalPrinter.isPrinterConnected();
 
+  // Fetch orders
   const loadOrders = async () => {
     try {
       const auth = await getStoredAuth();
@@ -39,7 +44,13 @@ export default function Orders() {
         searchQuery,
         searchType: "all",
       });
-      setOrders(newOrders);
+      setOrders((prevOrders) => {
+        const newOrdersIds = new Set(newOrders.map((order) => order.id));
+        return [
+          ...newOrders,
+          ...prevOrders.filter((order) => !newOrdersIds.has(order.id)),
+        ];
+      });
       setTotalPages(totalPages);
     } catch (err) {
       setError("Failed to load orders");
@@ -51,8 +62,56 @@ export default function Orders() {
     }
   };
 
+  // Print unprinted orders
+  const printUnprintedOrders = useCallback(async () => {
+    if (!isPrinterConnected) {
+      console.log("Printer not connected. Skipping printing.");
+      return;
+    }
+
+    const unprintedOrders = orders.filter((order) => !order.isPrinted);
+    setPrinting(true);
+
+    for (const order of unprintedOrders) {
+      try {
+        console.log(`Printing order ${order.id}...`);
+        const receiptString = await generateReceiptString(order);
+        await thermalPrinter.printBill(receiptString);
+        // await thermalPrinter.printBill(receiptString); //Used to print the Second Receipt
+
+        // Update order status via PATCH request
+        await updateOrderStatus(order.id, { isPrinted: true });
+
+        // Update local state
+        setOrders((prevOrders) =>
+          prevOrders.map((o) =>
+            o.id === order.id ? { ...o, isPrinted: true } : o
+          )
+        );
+
+        console.log(`Order ${order.id} printed successfully.`);
+      } catch (err) {
+        console.error(`Failed to print order ${order.id}:`, err);
+      }
+    }
+
+    setPrinting(false);
+  }, [orders, isPrinterConnected]);
+
+  // Fetch orders and print unprinted ones at intervals
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadOrders().then(() => printUnprintedOrders());
+    }, 5000); // Fetch and print every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, [printUnprintedOrders]);
+
+  // Prevent device from sleeping on this screen
   useEffect(() => {
     loadOrders();
+
+    return () => {};
   }, [page, status, searchQuery]);
 
   return (
@@ -102,6 +161,13 @@ export default function Orders() {
           refreshing={loading}
           onRefresh={loadOrders}
         />
+      )}
+
+      {printing && (
+        <View style={styles.printingIndicator}>
+          <ActivityIndicator size="small" />
+          <Text>Printing transactions...</Text>
+        </View>
       )}
 
       <View style={styles.pagination}>
@@ -155,5 +221,12 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopWidth: 1,
     borderTopColor: "#eee",
+  },
+  printingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    backgroundColor: "white",
   },
 });

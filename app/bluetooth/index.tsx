@@ -32,9 +32,8 @@ const BluetoothSettings = () => {
       <ScrollView style={styles.container}>
         {/* Bluetooth Switch Section */}
         <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Bluetooth Settings</Text>
           <View style={styles.toggleContainer}>
-            <Text style={styles.toggleLabel}>Bluetooth</Text>
+            <Text style={styles.headerTitle}>Bluetooth</Text>
             <Switch
               trackColor={{ false: "#767577", true: "#81b0ff" }}
               thumbColor={isBluetoothEnabled ? "#f5dd4b" : "#f4f3f4"}

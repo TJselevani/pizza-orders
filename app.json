@@ -29,7 +29,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "9b7eb5a0-84fa-4546-b245-effec0481231"
+        "projectId": "c62af14a-50bf-42e2-bfa7-3c9b533b4b3e"
       }
     },
     "plugins": ["expo-router", "expo-secure-store"]
